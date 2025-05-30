@@ -1,12 +1,18 @@
 package com.ecommerce.fashionbackend.service.impl;
 
 import com.ecommerce.fashionbackend.constant.TokenType;
-import com.ecommerce.fashionbackend.dto.request.*;
+import com.ecommerce.fashionbackend.dto.request.AccessTokenRequest;
+import com.ecommerce.fashionbackend.dto.request.ForgotPasswordRequest;
+import com.ecommerce.fashionbackend.dto.request.LoginRequest;
+import com.ecommerce.fashionbackend.dto.request.RefreshTokenRequest;
 import com.ecommerce.fashionbackend.dto.response.AuthResponse;
 import com.ecommerce.fashionbackend.dto.response.IntrospectResponse;
 import com.ecommerce.fashionbackend.entity.User;
 import com.ecommerce.fashionbackend.repository.UserRepository;
-import com.ecommerce.fashionbackend.service.*;
+import com.ecommerce.fashionbackend.service.AuthService;
+import com.ecommerce.fashionbackend.service.EmailService;
+import com.ecommerce.fashionbackend.service.JwtService;
+import com.ecommerce.fashionbackend.service.TokenService;
 import io.micrometer.common.util.StringUtils;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
@@ -25,17 +31,19 @@ public class AuthServiceImpl implements AuthService {
 
     private final JwtService jwtService;
 
-    private final RedisTokenService redisTokenService;
+    private final TokenService tokenService;
 
     private final EmailService emailService;
 
-private final UserRepository userRepository;
+    private final UserRepository userRepository;
+
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getEmail(),
-                        loginRequest.getPassword()));
+                        loginRequest.getPassword())
+        );
         User user = (User) authentication.getPrincipal();
         return generateToken(user);
     }
@@ -44,81 +52,79 @@ private final UserRepository userRepository;
     public AuthResponse refreshToken(RefreshTokenRequest refreshTokenRequest) {
         String refreshToken = refreshTokenRequest.getRefreshToken();
         if (StringUtils.isBlank(refreshToken)) {
+            throw new IllegalArgumentException("Refresh token is blank");
+        }
+        String email = jwtService.extractEmail(refreshToken, TokenType.REFRESH_TOKEN);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (!jwtService.validateToken(refreshToken, TokenType.REFRESH_TOKEN, user)) {
             throw new IllegalArgumentException("Invalid refresh token");
         }
-        String username = jwtService.extractUsername(refreshToken, TokenType.REFRESH);
-        User user = userRepository.findByEmail(username).orElseThrow(() -> new IllegalArgumentException("Invalid username"));
-        if (!jwtService.validateToken(refreshToken, TokenType.REFRESH, user)) {
-            throw new IllegalArgumentException("Refresh token is invalid or expired");
-        }
-
-        String redisRefreshToken = redisTokenService.getRefreshToken(user.getId());
+        String redisRefreshToken = tokenService.getRefreshToken(user.getId());
         if (!redisRefreshToken.equals(refreshToken)) {
-            throw new IllegalArgumentException("Refresh token is invalid or expired");
+            throw new IllegalArgumentException("Invalid refresh token");
         }
-
-        String accessToken = jwtService.generateAccessToken(user);
-        redisTokenService.updateAccessToken(user.getId(), accessToken);
-        return AuthResponse
-                .builder()
+        String newAccessToken = jwtService.generateAccessToken(user);
+        tokenService.updateAccessToken(user.getId(), newAccessToken);
+        return AuthResponse.builder()
                 .userId(user.getId())
-                .accessToken(accessToken)
+                .accessToken(newAccessToken)
                 .refreshToken(refreshToken)
                 .build();
     }
 
     @Override
-    public void logout(LogoutRequest logoutRequest) {
-        String accessToken = logoutRequest.getAccessToken();;
+    public void logout(AccessTokenRequest accessTokenRequest) {
+        String accessToken = accessTokenRequest.getAccessToken();
         if (StringUtils.isBlank(accessToken)) {
-            throw new IllegalArgumentException("Invalid token");
+            throw new IllegalArgumentException("Access token is blank");
         }
-        String username = jwtService.extractUsername(accessToken, TokenType.ACCESS);
-        User user = userRepository.findByEmail(username).orElseThrow(() -> new IllegalArgumentException("Invalid username"));
-        if (!jwtService.validateToken(accessToken, TokenType.ACCESS, user)) {
-            throw new IllegalArgumentException("Refresh token is invalid or expired");
+        String email = jwtService.extractEmail(accessToken, TokenType.ACCESS_TOKEN);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (!jwtService.validateToken(accessToken, TokenType.ACCESS_TOKEN, user)) {
+            throw new IllegalArgumentException("Invalid access token");
         }
-        redisTokenService.deleteToken(user.getId());
+        tokenService.deleteToken(user.getId());
         SecurityContextHolder.clearContext();
     }
 
     @Override
-    public IntrospectResponse introspectToken(IntrospectRequest introspectRequest) {
-        String accessToken = introspectRequest.getAccessToken();
+    public IntrospectResponse introspectToken(AccessTokenRequest accessTokenRequest) {
+        String accessToken = accessTokenRequest.getAccessToken();
         if (StringUtils.isBlank(accessToken)) {
-            throw new IllegalArgumentException("Invalid token");
+            throw new IllegalArgumentException("Access token is blank");
         }
         boolean isValid = true;
-        try {
-            String username = jwtService.extractUsername(accessToken, TokenType.ACCESS);
-            User user = userRepository.findByEmail(username).orElseThrow(() -> new IllegalArgumentException("Invalid username"));
-            isValid = jwtService.validateToken(accessToken, TokenType.ACCESS, user);
-        } catch (Exception e) {
+        String email = jwtService.extractEmail(accessToken, TokenType.ACCESS_TOKEN);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (!jwtService.validateToken(accessToken, TokenType.ACCESS_TOKEN, user)) {
             isValid = false;
         }
-        return IntrospectResponse
-                .builder()
+        return IntrospectResponse.builder()
                 .isValid(isValid)
                 .build();
     }
 
+
     @Override
     public void forgotPassword(ForgotPasswordRequest forgotPasswordRequest) throws MessagingException {
-        User user = userRepository.findByEmail(forgotPasswordRequest.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+        String email = forgotPasswordRequest.getEmail();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         String newPassword = generateRandomPassword();
         user.setPassword(newPassword);
         userRepository.save(user);
-
-        emailService.sendEmail(user.getEmail(), "New password", "Your new password is: " + newPassword);
+        emailService.sendEmail(email, "Forgot Password", "Your new password is " + newPassword);
     }
 
-//    other methods
+    //    other methods
     private AuthResponse generateToken(User user) {
         String accessToken = jwtService.generateAccessToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
 
-        redisTokenService.saveToken(user.getId(), accessToken, refreshToken);
+        tokenService.saveToken(user.getId(), accessToken, refreshToken);
         return AuthResponse.builder()
                 .userId(user.getId())
                 .accessToken(accessToken)

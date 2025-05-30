@@ -1,7 +1,7 @@
 package com.ecommerce.fashionbackend.config;
 
-import com.ecommerce.fashionbackend.service.CustomUserDetailsService;
-import com.ecommerce.fashionbackend.service.UserService;
+import com.ecommerce.fashionbackend.service.impl.UserDetailsServiceImpl;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,13 +26,26 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
-    private final CustomUserDetailsService userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     private final String[] PUBLIC_ENDPOINTS = {
             "/auth/**",
             "/user/**",
             "/admin/**"
     };
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(@NonNull CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("*")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE")
+                        .allowedHeaders("*");
+            }
+        };
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

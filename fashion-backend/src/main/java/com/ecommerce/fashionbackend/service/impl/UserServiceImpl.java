@@ -18,24 +18,23 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
+    private final PasswordEncoder passwordEncoder;
+
     private final UserMapper userMapper;
 
     private final AddressMapper addressMapper;
-
-    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserResponse saveUser(RegisterRequest registerRequest) {
@@ -52,11 +51,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse updateUser(UpdateUserRequest updateUserRequest) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         userMapper.updateUser(user, updateUserRequest);
         userRepository.save(user);
         return userMapper.toUserResponse(user);
@@ -65,31 +62,29 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUser(String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid userId"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return userMapper.toUserResponse(user);
     }
 
     @Override
     public UserResponse getProfile() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return userMapper.toUserResponse(user);
     }
 
     @Override
     public void deleteUser(String userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid userId"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         userRepository.delete(user);
     }
 
     @Override
     public UserStatus changeUserStatus(String userId, UserStatus userStatus) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid userId"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         user.setStatus(userStatus);
         userRepository.save(user);
         return user.getStatus();
@@ -97,32 +92,31 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void changePassword(ChangePasswordRequest changePasswordRequest) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
-        if (passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
-            userRepository.save(user);
-        } else {
-            throw new IllegalArgumentException("Invalid old password");
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (!passwordEncoder.matches(changePasswordRequest.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Old password is incorrect");
         }
-    }
-
-    public Specification<User> hasRole(Role role) {
-        return (root, query, cb)
-                -> role == null ? null : cb.equal(root.get("role"), role);
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
     }
 
     @Override
-    public PageResponse<UserResponse> getAllUsersByRole(Role role, int pageNo, int pageSize) {
-        Specification<User> spec = hasRole(role);
+    public PageResponse<?> getAllUsers(Role role, String keyword, UserStatus userStatus,
+                                             int pageNo, int pageSize) {
+        Specification<User> spec = Stream.of(
+                hasRole(role),
+                hasKeyword(keyword),
+                hasStatus(userStatus))
+                .reduce(Specification::and)
+                .orElse(null);
         Page<User> result = userRepository.findAll(spec, PageRequest.of(pageNo, pageSize));
-        List<UserResponse> userResponses = result.getContent().stream()
+        List<UserResponse> userResponses = result.getContent()
+                .stream()
                 .map(userMapper::toUserResponse)
                 .toList();
-        return PageResponse.<UserResponse>builder()
+        return PageResponse.builder()
                 .pageNo(pageNo)
                 .pageSize(pageSize)
                 .totalPage(result.getTotalPages())
@@ -132,13 +126,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public AddressResponse saveAddress(AddressRequest addressRequest) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
-
-        if ( user.getAddress() == null) {
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (user.getAddress() == null) {
             user.setAddress(addressMapper.toAddress(addressRequest));
         } else {
             addressMapper.updateAddress(user.getAddress(), addressRequest);
@@ -148,25 +139,49 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public AddressResponse getAddress() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         return addressMapper.toAddressResponse(user.getAddress());
     }
 
     @Override
     public void deleteAddress() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email"));
-        if (user.getAddress() == null) {
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        if (user.getAddress() != null) {
+            user.setAddress(null);
+            userRepository.save(user);
+        } else {
             throw new IllegalArgumentException("Address not found");
         }
-        user.setAddress(null);
-        userRepository.save(user);
+    }
+
+//    other methods
+    private Specification<User> hasRole(Role role) {
+        return (root, query, cb)
+                -> role == null ? null : cb.equal(root.get("role"), role);
+    }
+
+    private Specification<User> hasStatus(UserStatus userStatus) {
+        return (root, query, cb)
+                -> userStatus == null ? null : cb.equal(root.get("status"), userStatus);
+    }
+
+    private Specification<User> hasKeyword(String keyword) {
+        return (root, query, cb)
+                -> {
+            if (keyword == null || keyword.isBlank()) {
+                return null;
+            } else {
+                String lowerCaseKeyword = "%" + keyword.toLowerCase() + "%";
+                return cb.or(
+                        cb.like(cb.lower(root.get("fullName")), lowerCaseKeyword),
+                        cb.like(cb.lower(root.get("email")), lowerCaseKeyword),
+                        cb.like(cb.lower(root.get("phone")), lowerCaseKeyword)
+                );
+            }
+        };
     }
 }

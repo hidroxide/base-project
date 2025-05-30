@@ -7,20 +7,19 @@ import lombok.*;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "address")
-public class Address {
+@Table(name = "product_image")
+public class ProductImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String street;
+    private String imageUrl;
 
-    private String ward;
+    private boolean isMainImage;
 
-    private String district;
+    private Integer position;
 
-    private String province;
-
-    @OneToOne(mappedBy = "address")
-    private User user;
+    @ManyToOne
+    @JoinColumn(name = "product_id")
+    private Product product;
 }

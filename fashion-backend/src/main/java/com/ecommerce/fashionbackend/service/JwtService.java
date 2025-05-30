@@ -7,6 +7,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 public interface JwtService {
     String generateAccessToken(User user);
     String generateRefreshToken(User user);
-    String extractUsername(String token, TokenType tokenType);
+    String extractEmail(String token, TokenType tokenType);
     boolean validateToken(String token, TokenType tokenType, UserDetails userDetails);
 }

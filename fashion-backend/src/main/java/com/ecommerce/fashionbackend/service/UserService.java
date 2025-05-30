@@ -9,21 +9,21 @@ import com.ecommerce.fashionbackend.dto.request.UpdateUserRequest;
 import com.ecommerce.fashionbackend.dto.response.AddressResponse;
 import com.ecommerce.fashionbackend.dto.response.PageResponse;
 import com.ecommerce.fashionbackend.dto.response.UserResponse;
-import org.springframework.security.core.userdetails.UserDetailsService;
-
-import java.util.List;
 
 public interface UserService {
-//    user
+    //    user
     UserResponse saveUser(RegisterRequest registerRequest);
     UserResponse updateUser(UpdateUserRequest updateUserRequest);
     UserResponse getUser(String userId);
     UserResponse getProfile();
     void deleteUser(String userId);
     UserStatus changeUserStatus(String userId, UserStatus userStatus);
+//    void updateAvatar(String avatar);
     void changePassword(ChangePasswordRequest changePasswordRequest);
-    PageResponse<?> getAllUsersByRole(Role role, int pageNo, int pageSize);
-//    address
+    PageResponse<?> getAllUsers(Role role, String keyword, UserStatus userStatus,
+                             int pageNo, int pageSize);
+
+    //    address
     AddressResponse saveAddress(AddressRequest addressRequest);
     AddressResponse getAddress();
     void deleteAddress();

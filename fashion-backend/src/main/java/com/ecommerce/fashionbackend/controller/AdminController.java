@@ -14,10 +14,12 @@ public class AdminController {
     private final UserService userService;
 
     @GetMapping("/users")
-    public ResponseEntity<?> getAllUsers(@RequestParam(required = false) Role  role,
+    public ResponseEntity<?> getAllUsers(@RequestParam(required = false) Role role,
+                                         @RequestParam(required = false) String keyword,
+                                         @RequestParam(required = false) UserStatus userStatus,
                                          @RequestParam(defaultValue = "0") int pageNo,
                                          @RequestParam(defaultValue = "10") int pageSize) {
-        return ResponseEntity.ok(userService.getAllUsersByRole(role, pageNo, pageSize));
+        return ResponseEntity.ok(userService.getAllUsers(role, keyword, userStatus, pageNo, pageSize));
     }
 
     @PutMapping("/users/{userId}/ban")

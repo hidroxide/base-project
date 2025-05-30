@@ -8,7 +8,5 @@ public enum UserStatus {
     @JsonProperty("INACTIVE")
     INACTIVE,
     @JsonProperty("BLOCKED")
-    BLOCKED,
-    @JsonProperty("DELETED")
-    DELETED
+    BLOCKED
 }

@@ -1,6 +1,6 @@
 package com.ecommerce.fashionbackend.service.impl;
 
-import com.ecommerce.fashionbackend.service.RedisTokenService;
+import com.ecommerce.fashionbackend.service.TokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
-public class RedisTokenServiceImpl implements RedisTokenService {
+public class TokenServiceImpl implements TokenService {
     private final StringRedisTemplate redisTemplate;
 
     private static final long ACCESS_TOKEN_TTL = 60 * 24;
@@ -43,7 +43,7 @@ public class RedisTokenServiceImpl implements RedisTokenService {
         redisTemplate.delete(getRefreshTokenKey(userId));
     }
 
-//    other methods
+    //    other methods
     private String getAccessTokenKey(String userId) {
         return "user:" + userId + ":access_token";
     }
