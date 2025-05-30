@@ -1,6 +1,9 @@
 package com.ecommerce.fashionbackend.controller;
 
-import com.ecommerce.fashionbackend.dto.request.*;
+import com.ecommerce.fashionbackend.dto.request.AccessTokenRequest;
+import com.ecommerce.fashionbackend.dto.request.LoginRequest;
+import com.ecommerce.fashionbackend.dto.request.RefreshTokenRequest;
+import com.ecommerce.fashionbackend.dto.request.RegisterRequest;
 import com.ecommerce.fashionbackend.dto.response.AuthResponse;
 import com.ecommerce.fashionbackend.dto.response.UserResponse;
 import com.ecommerce.fashionbackend.service.AuthService;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+
     private final UserService userService;
 
     @PostMapping("/register")
@@ -38,13 +42,13 @@ public class AuthController {
     }
 
     @PostMapping("/introspect")
-    public ResponseEntity<?> introspect(@RequestBody IntrospectRequest introspectRequest) {
-        return ResponseEntity.ok(authService.introspectToken(introspectRequest));
+    public ResponseEntity<?> introspect(@RequestBody AccessTokenRequest accessTokenRequest) {
+        return ResponseEntity.ok(authService.introspectToken(accessTokenRequest));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@RequestBody LogoutRequest logoutRequest) {
-        authService.logout(logoutRequest);
+    public ResponseEntity<String> logout(@RequestBody AccessTokenRequest accessTokenRequest) {
+        authService.logout(accessTokenRequest);
         return ResponseEntity.ok("Logout successful");
     }
 }

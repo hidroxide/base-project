@@ -35,22 +35,22 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public String generateAccessToken(User user) {
-        return generateToken(new HashMap<>(), user, TokenType.ACCESS, accessExpiration);
+        return generateToken(new HashMap<>(), user, TokenType.ACCESS_TOKEN, accessExpiration);
     }
 
     @Override
     public String generateRefreshToken(User user) {
-        return generateToken(new HashMap<>(), user, TokenType.REFRESH, refreshExpiration);
+        return generateToken(new HashMap<>(), user, TokenType.REFRESH_TOKEN, refreshExpiration);
     }
 
     @Override
-    public String extractUsername(String token, TokenType tokenType) {
+    public String extractEmail(String token, TokenType tokenType) {
         return extractClaim(token, tokenType, Claims::getSubject);
     }
 
     @Override
     public boolean validateToken(String token, TokenType tokenType, UserDetails userDetails) {
-        final String username = extractUsername(token, tokenType);
+        final String username = extractEmail(token, tokenType);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token, tokenType));
     }
 
@@ -74,7 +74,7 @@ public class JwtServiceImpl implements JwtService {
     }
 
     private SecretKey getSignInKey(TokenType tokenType) {
-        if (TokenType.ACCESS.equals(tokenType)) {
+        if (TokenType.ACCESS_TOKEN.equals(tokenType)) {
             return Keys.hmacShaKeyFor(Decoders.BASE64.decode(accessSecretKey));
         } else {
             return Keys.hmacShaKeyFor(Decoders.BASE64.decode(refreshSecretKey));

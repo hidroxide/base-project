@@ -1,6 +1,6 @@
 package com.ecommerce.fashionbackend.service;
 
-public interface RedisTokenService {
+public interface TokenService {
     void saveToken(String userId, String accessToken, String refreshToken);
     void updateAccessToken(String userId, String newAccessToken);
     String getAccessToken(String userId);

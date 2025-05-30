@@ -3,6 +3,6 @@ package com.ecommerce.fashionbackend.dto.request;
 import lombok.Data;
 
 @Data
-public class IntrospectRequest {
+public class AccessTokenRequest {
     private String accessToken;
 }
