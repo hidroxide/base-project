@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: fashion-backend
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/fashion-ecommerce-db
+    username: root
+    password: nguyenhuudat
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: shopzoneecommerce@gmail.com
+    password: jatjufpfqdhwoabx
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connection timeout: 5000
+          timeout: 3000
+          write timeout: 5000
+
+jwt:
+  access:
+    secret-key: 8duUie1cIDOpu7qO1JZoZgMZAW/NG6FgOMSFy+MdDJcxxZJLF3CaKYyKPU59iTAe
+    expiration: 86400000
+  refresh:
+    secret-key: jNlT9yqWxv03R+LlLuKtLmSkwYVDs7F7NOe/AwZ3j+FdPSjwK0Do6SZrd8viwOXw
+    expiration: 604800000
