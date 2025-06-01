@@ -1,4 +1,4 @@
-package com.ecommerce.fashionbackend.common.dto.response;
+package com.ecommerce.fashionbackend.user.dto.response;
 
 import lombok.Data;
 

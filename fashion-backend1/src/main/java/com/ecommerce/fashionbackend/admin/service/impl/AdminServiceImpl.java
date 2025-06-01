@@ -4,7 +4,7 @@ import com.ecommerce.fashionbackend.admin.service.AdminService;
 import com.ecommerce.fashionbackend.common.constant.Role;
 import com.ecommerce.fashionbackend.common.constant.UserStatus;
 import com.ecommerce.fashionbackend.common.dto.response.PageResponse;
-import com.ecommerce.fashionbackend.common.dto.response.UserResponse;
+import com.ecommerce.fashionbackend.user.dto.response.UserResponse;
 import com.ecommerce.fashionbackend.user.entity.User;
 import com.ecommerce.fashionbackend.user.mapper.UserMapper;
 import com.ecommerce.fashionbackend.user.repository.UserRepository;

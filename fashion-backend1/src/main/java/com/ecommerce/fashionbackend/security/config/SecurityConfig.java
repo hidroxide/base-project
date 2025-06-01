@@ -1,7 +1,7 @@
 package com.ecommerce.fashionbackend.security.config;
 
 import com.ecommerce.fashionbackend.security.filter.JwtAuthFilter;
-import com.ecommerce.fashionbackend.security.service.CustomUserDetailsService;
+import com.ecommerce.fashionbackend.security.service.impl.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
-    private final CustomUserDetailsService userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     private final String[] PUBLIC_ENDPOINTS = {
             "/auth/**",
