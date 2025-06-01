@@ -1,4 +1,4 @@
-package com.ecommerce.fashionbackend.security.service;
+package com.ecommerce.fashionbackend.security.service.impl;
 
 import com.ecommerce.fashionbackend.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class CustomUserDetailsService implements UserDetailsService {
+public class UserDetailsServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
 
     @Override

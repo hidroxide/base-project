@@ -1,8 +1,8 @@
 package com.ecommerce.fashionbackend.security.filter;
 
 import com.ecommerce.fashionbackend.common.constant.TokenType;
-import com.ecommerce.fashionbackend.security.service.CustomUserDetailsService;
 import com.ecommerce.fashionbackend.security.service.JwtService;
+import com.ecommerce.fashionbackend.security.service.impl.UserDetailsServiceImpl;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,7 +25,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
-    private final CustomUserDetailsService userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
